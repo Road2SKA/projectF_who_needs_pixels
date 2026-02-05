@@ -1,12 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=PREP
-#SBATCH --output=LOGS/prepare_%j.out
-#SBATCH --error=LOGS/prepare_%j.err
-#SBATCH --time=00:15:00
-#SBATCH --partition=Main
+#SBATCH --output=LOGS/slurm_PREPARE.out
+#SBATCH --error=LOGS/slurm_PREPARE.err
+#SBATCH --time=00:05:00
+#SBATCH --partition=GPU
+#SBATCH --gres=gpu:1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=1
 #SBATCH --mem=16GB
+#SBATCH --reservation=roadtoska-gpu
 
 # SIREN Data Preparation - CPU
 # This script prepares the FITS data for training
@@ -23,9 +25,9 @@ echo "=========================================="
 # ============================================================================
 # CONFIGURATION - Edit these paths as needed
 # ============================================================================
-CONFIG_FILE="${CONFIG_FILE:-config.yaml}"
-REQUIREMENTS="${REQUIREMENTS:-requirements.txt}"
-VENV_PATH="${VENV_PATH:-siren_env}"
+CONFIG_FILE="${CONFIG_FILE:-/idia/projects/roadtoska/projectF/DEPENDENCIES/config.yaml}"
+REQUIREMENTS="${REQUIREMENTS:-/idia/projects/roadtoska/projectF/DEPENDENCIES/requirements.txt}"
+#VENV_PATH="${VENV_PATH:-siren_env}"
 
 # ============================================================================
 # ENVIRONMENT SETUP
@@ -33,16 +35,17 @@ VENV_PATH="${VENV_PATH:-siren_env}"
 
 # Load modules
 module purge
-module load python/3.9
+module load apptainer
+#module load python/3.12
 
 # Activate virtual environment
-echo ""
-echo "Activating virtual environment: $VENV_PATH"
-if [ ! -d "$VENV_PATH" ]; then
-    echo "ERROR: Virtual environment not found at $VENV_PATH"
-    exit 1
-fi
-source $VENV_PATH/bin/activate
+#echo ""
+#echo "Activating virtual environment: $VENV_PATH"
+#if [ ! -d "$VENV_PATH" ]; then
+#    echo "ERROR: Virtual environment not found at $VENV_PATH"
+#    exit 1
+#fi
+#source $VENV_PATH/bin/activate
 
 # Install requirements
 echo ""
@@ -89,8 +92,13 @@ echo ""
 
 echo "Starting data preparation..."
 echo ""
+export CONTAINER=/idia/projects/roadtoska/projectF/pytorch_projectF.sif
+apptainer exec "$CONTAINER" pip install --user python-dateutil
 
-python prepare.py --config "$CONFIG_FILE"
+apptainer exec \
+  --bind $PWD \
+  "$CONTAINER" \
+  python prepare.py --config config.yaml
 
 PREPARE_EXIT_CODE=$?
 
@@ -107,4 +115,10 @@ echo "End time: $(date)"
 echo "=========================================="
 
 # Deactivate virtual environment
-deactivate
+# Deactivate virtual environment if active
+#if command -v deactivate >/dev/null 2>&1; then#
+#    deactivate || true
+#fi
+
+#exit 0
+

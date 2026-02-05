@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=TRAIN
-#SBATCH --output=LOGS/train_%j.out
-#SBATCH --error=LOGS/train_%j.err
+#SBATCH --output=LOGS/slurm_TRAIN.out
+#SBATCH --error=LOGS/slurm_TRAIN.err
 #SBATCH --time=01:00:00
 #SBATCH --partition=GPU
-#SBATCH --gres=gpu:1
+#SBATCH --constraint=A100
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16GB
@@ -25,9 +25,10 @@ echo "=========================================="
 # ============================================================================
 # CONFIGURATION - Edit these paths as needed
 # ============================================================================
-CONFIG_FILE="${CONFIG_FILE:-config.yaml}"
-REQUIREMENTS="${REQUIREMENTS:-requirements.txt}"
-VENV_PATH="${VENV_PATH:-siren_env}"
+CONFIG_FILE="${CONFIG_FILE:-/idia/projects/roadtoska/projectF/DEPENDENCIES/config.yaml}"
+REQUIREMENTS="${REQUIREMENTS:-/idia/projects/roadtoska/projectF/DEPENDENCIES/requirements.txt}"
+CONTAINER="${CONTAINER:-/idia/projects/roadtoska/projectF/pytorch_projectF.sif}" 
+#VENV_PATH="${VENV_PATH:-siren_env}"
 
 # ============================================================================
 # ENVIRONMENT SETUP
@@ -35,26 +36,17 @@ VENV_PATH="${VENV_PATH:-siren_env}"
 
 # Load modules
 module purge
-module load python/3.9
-module load cuda/11.7
+module load apptainer
+#module load cuda/11.7
 
 # Activate virtual environment
-echo ""
-echo "Activating virtual environment: $VENV_PATH"
-if [ ! -d "$VENV_PATH" ]; then
-    echo "ERROR: Virtual environment not found at $VENV_PATH"
-    exit 1
-fi
-source $VENV_PATH/bin/activate
-
-# Install requirements
-echo ""
-echo "Installing requirements from: $REQUIREMENTS"
-if [ ! -f "$REQUIREMENTS" ]; then
-    echo "ERROR: Requirements file not found at $REQUIREMENTS"
-    exit 1
-fi
-pip install -r $REQUIREMENTS --quiet
+#echo ""
+#echo "Activating virtual environment: $VENV_PATH"#
+#if [ ! -d "$VENV_PATH" ]; then
+#    echo "ERROR: Virtual environment not found at $VENV_PATH"
+#    exit 1
+#fi
+#source $VENV_PATH/bin/activate
 
 # ============================================================================
 # GPU CHECK
@@ -105,9 +97,9 @@ if [ -n "$DATA_FILE" ] && [ ! -f "$DATA_FILE" ]; then
 fi
 
 # Check Python and PyTorch
-python --version || { echo "ERROR: Python not available"; exit 1; }
-python -c "import torch; print(f'PyTorch {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}')" || { echo "ERROR: PyTorch not properly installed"; exit 1; }
-echo "✓ Python and PyTorch available"
+apptainer exec "$CONTAINER" python --version || { echo "ERROR: Python not available"; exit 1; }
+apptainer exec --nv "$CONTAINER" python -c "import torch; print(f'PyTorch {torch.__version__}'); \
+print(f'CUDA available: {torch.cuda.is_available()}')" || { echo "ERROR: PyTorch not properly installed"; exit 1; }
 
 echo "=========================================="
 echo ""
@@ -119,7 +111,7 @@ echo ""
 echo "Starting model training..."
 echo ""
 
-python train.py --config "$CONFIG_FILE"
+apptainer exec --nv "$CONTAINER" python train.py --config "$CONFIG_FILE"
 
 TRAIN_EXIT_CODE=$?
 
@@ -136,4 +128,10 @@ echo "End time: $(date)"
 echo "=========================================="
 
 # Deactivate virtual environment
-deactivate
+# Deactivate virtual environment if active
+#if command -v deactivate >/dev/null 2>&1; then
+#    deactivate || true
+#fi
+
+#exit 0
+

@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=TUNE
-#SBATCH --output=LOGS/tune_%j.out
-#SBATCH --error=LOGS/tune_%j.err
+#SBATCH --output=LOGS/slurm_TUNE.out
+#SBATCH --error=LOGS/slurm_TUNE.err
 #SBATCH --time=03:00:00
 #SBATCH --partition=GPU
-#SBATCH --gres=gpu:1
+#SBATCH --constraint=A100
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16GB
@@ -25,9 +25,10 @@ echo "=========================================="
 # ============================================================================
 # CONFIGURATION - Edit these paths as needed
 # ============================================================================
-CONFIG_FILE="${CONFIG_FILE:-config.yaml}"
-REQUIREMENTS="${REQUIREMENTS:-requirements.txt}"
-VENV_PATH="${VENV_PATH:-siren_env}"
+CONFIG_FILE="${CONFIG_FILE:-/idia/projects/roadtoska/projectF/DEPENDENCIES/config.yaml}"
+REQUIREMENTS="${REQUIREMENTS:-/idia/projects/roadtoska/projectF/DEPENDENCIES/requirements.txt}"
+CONTAINER="${CONTAINER:-/idia/projects/roadtoska/projectF/pytorch_projectF.sif}"
+#VENV_PATH="${VENV_PATH:-siren_env}"
 
 # ============================================================================
 # ENVIRONMENT SETUP
@@ -35,17 +36,17 @@ VENV_PATH="${VENV_PATH:-siren_env}"
 
 # Load modules
 module purge
-module load python/3.9
-module load cuda/11.7
+module load apptainer
+#module load cuda/11.7
 
 # Activate virtual environment
-echo ""
-echo "Activating virtual environment: $VENV_PATH"
-if [ ! -d "$VENV_PATH" ]; then
-    echo "ERROR: Virtual environment not found at $VENV_PATH"
-    exit 1
-fi
-source $VENV_PATH/bin/activate
+#echo ""
+#echo "Activating virtual environment: $VENV_PATH"
+#if [ ! -d "$VENV_PATH" ]; then
+#    echo "ERROR: Virtual environment not found at $VENV_PATH"
+#    exit 1
+#fi
+#source $VENV_PATH/bin/activate
 
 # Install requirements
 echo ""
@@ -129,7 +130,10 @@ echo "Starting hyperparameter tuning..."
 echo "This may take a while (config specifies ${n_trials:-20} trials)"
 echo ""
 
-python tune.py --config "$CONFIG_FILE"
+apptainer exec \
+  --bind $PWD \
+  "$CONTAINER" \
+  python tune.py --config config.yaml
 
 TUNE_EXIT_CODE=$?
 
@@ -146,4 +150,10 @@ echo "End time: $(date)"
 echo "=========================================="
 
 # Deactivate virtual environment
-deactivate
+# Deactivate virtual environment if active
+#if command -v deactivate >/dev/null 2>&1; then
+#    deactivate || true
+#fi
+
+#exit 0
+
