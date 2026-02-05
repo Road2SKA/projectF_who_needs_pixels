@@ -25,9 +25,11 @@ echo "=========================================="
 # ============================================================================
 # CONFIGURATION - Edit these paths as needed
 # ============================================================================
-CONFIG_FILE="${CONFIG_FILE:-/idia/projects/roadtoska/projectF/DEPENDENCIES/config.yaml}"
 REQUIREMENTS="${REQUIREMENTS:-/idia/projects/roadtoska/projectF/DEPENDENCIES/requirements.txt}"
 #VENV_PATH="${VENV_PATH:-siren_env}"
+SCRIPTS_DIR="${SCRIPTS_DIR:-/project_workspace/scripts}"
+CONFIG_FILE="${CONFIG_FILE:-/project_workspace/scripts/config.yaml}"
+
 
 # ============================================================================
 # ENVIRONMENT SETUP
@@ -48,36 +50,37 @@ module load apptainer
 #source $VENV_PATH/bin/activate
 
 # Install requirements
-echo ""
-echo "Installing requirements from: $REQUIREMENTS"
-if [ ! -f "$REQUIREMENTS" ]; then
-    echo "ERROR: Requirements file not found at $REQUIREMENTS"
-    exit 1
-fi
-pip install -r $REQUIREMENTS --quiet
+# Uncomment if we need to reinstall dependencies
+# echo ""
+# echo "Installing requirements from: $REQUIREMENTS"
+# if [ ! -f "$REQUIREMENTS" ]; then
+#     echo "ERROR: Requirements file not found at $REQUIREMENTS"
+#     exit 1
+# fi
+# pip install -r $REQUIREMENTS --quiet
 
 # ============================================================================
 # VALIDATION CHECKS
 # ============================================================================
 
-echo ""
-echo "=========================================="
-echo "Validation Checks"
-echo "=========================================="
+# echo ""
+# echo "=========================================="
+# echo "Validation Checks"
+# echo "=========================================="
 
-# Check if config file exists
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "ERROR: Config file not found at $CONFIG_FILE"
-    exit 1
-fi
-echo "✓ Config file found: $CONFIG_FILE"
+# # Check if config file exists
+# if [ ! -f "$CONFIG_FILE" ]; then
+#     echo "ERROR: Config file not found at $CONFIG_FILE"
+#     exit 1
+# fi
+# echo "✓ Config file found: $CONFIG_FILE"
 
-# Check if prepare.py exists
-if [ ! -f "prepare.py" ]; then
-    echo "ERROR: prepare.py not found in current directory"
-    exit 1
-fi
-echo "✓ prepare.py found"
+# # Check if prepare.py exists
+# if [ ! -f "prepare.py" ]; then
+#     echo "ERROR: prepare.py not found in current directory"
+#     exit 1
+# fi
+# echo "✓ prepare.py found"
 
 # Check Python installation
 python --version || { echo "ERROR: Python not available"; exit 1; }
@@ -96,9 +99,10 @@ export CONTAINER=/idia/projects/roadtoska/projectF/pytorch_projectF.sif
 apptainer exec "$CONTAINER" pip install --user python-dateutil
 
 apptainer exec \
-  --bind $PWD \
+  --bind $PWD  \
+  --bind /idia/projects/roadtoska/projectF:/project_workspace \
   "$CONTAINER" \
-  python prepare.py --config config.yaml
+  python $SCRIPTS_DIR/prepare.py --config $CONFIG_FILE
 
 PREPARE_EXIT_CODE=$?
 
