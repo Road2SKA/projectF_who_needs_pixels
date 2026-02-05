@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 import yaml
@@ -34,6 +34,7 @@ class PrepareConfig(BaseModel):
 
 
 class TrainConfig(BaseModel):
+    device: Literal["cpu", "cuda", "mps", "auto"] = "auto"
     steps: int = 500
     batch_size: int = 512
     lr: float = 1e-4

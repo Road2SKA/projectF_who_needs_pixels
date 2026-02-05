@@ -7,3 +7,4 @@ astropy
 matplotlib
 rich
 scienceplots
+ptwt

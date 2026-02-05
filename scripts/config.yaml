@@ -13,22 +13,23 @@ model:
   hidden_omega: 30
 
 prepare:
-  patch_height: 1500
-  patch_width: 1500
+  patch_height: 2048
+  patch_width: 2048
   x0: 4500
   y0: 4500
   dtype: float32
   debug_plots: true
 
 train:
-  steps: 50
-  batch_size: 512
+  device: auto
+  steps: 500
+  batch_size: 4096
   lr: 1.0e-4
   amp: none            # none | fp16 | bf16
   data_dtype: float32  # float32 | float16 | bfloat16
   tf32: true
   compile: false
-  lambda_wavelet: 0.001
+  lambda_wavelet: 0.1
   wavelet: db1
   level: 2
   mode: constant
