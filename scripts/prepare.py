@@ -50,11 +50,11 @@ def load_meerkat_patch(
     data = data * 2.0 - 1.0
 
     meta = {
-        "min1": min1,
-        "min2": min2,
-        "max2": max2,
+        "min1": float(min1),
+        "min2": float(min2),
+        "max2": float(max2),
         "range": "[-1,1]",
-    }   
+    }  
 
     if meta_path is None:
         meta_path = Path("meta.json")
