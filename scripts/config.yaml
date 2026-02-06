@@ -1,7 +1,7 @@
 paths:
   data: data/meerkat_patch.npz
   model: data/siren_meerkat.pt
-  fits: MeerKAT_Galactic_Centre_1284MHz-StokesI.fits
+  fits: /project_workspace/MeerKAT_Galactic_Centre_1284MHz-StokesI.fits
   checkpoints_dir: data/checkpoints
   images_dir: data
   tune_dir: data

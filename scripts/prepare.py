@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-import numpy as np
+import numpy as np, json
 from astropy.io import fits
 from astropy.wcs import WCS
 import torch
@@ -16,6 +16,7 @@ def load_meerkat_patch(
     patch_width: int | None,
     x0: int | None,
     y0: int | None,
+    meta_path: Path | None = None,
 ) -> tuple[np.ndarray, fits.Header]:
     with fits.open(fits_path) as hdul:
         element = hdul[0]
@@ -34,12 +35,38 @@ def load_meerkat_patch(
     if not np.any(finite):
         raise ValueError("All selected pixels are NaN or inf.")
 
-    data = data - np.nanmin(data)
-    data += 1e-5
-    data = np.log(data)
-    data = data - np.nanmin(data)
-    data = data / np.nanmax(data)
+
+    min1 = np.nanmin(data)
+    data1 = data - min1
+
+    data2 = data1 + 1e-5
+
+    data3 = np.log(data2)
+
+    min2 = np.nanmin(data3)
+    max2 = np.nanmax(data3)
+
+    data = (data3 - min2) / (max2)
     data = data * 2.0 - 1.0
+
+    meta = {
+        "min1": min1,
+        "min2": min2,
+        "max2": max2,
+        "range": "[-1,1]",
+    }   
+
+    if meta_path is not None:
+        meta_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2)
+
+    # data = data - np.nanmin(data)
+    # data += 1e-5
+    # data = np.log(data)
+    # data = data - np.nanmin(data)
+    # data = data / np.nanmax(data)
+    # data = data * 2.0 - 1.0
     return data, header
 
 
