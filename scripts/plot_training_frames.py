@@ -4,6 +4,8 @@ from pathlib import Path
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np, json
+from pathlib import Path
 
 
 def _extract_step(path: Path) -> int:
@@ -21,6 +23,29 @@ def _compute_vmin_vmax(image: np.ndarray, vmin, vmax, percentile):
             float(np.percentile(image, hi)),
         )
     return None, None
+
+
+def undo_normalize_log_meerkat(norm_data, meta_path):
+
+    meta_path = Path(meta_path)
+    with open(meta_path, "r") as f:
+        meta = json.load(f)
+
+    min1 = meta["min1"]
+    eps  = meta["eps"]
+    min2 = meta["min2"]
+    max2 = meta["max2"]
+
+    # Undo [-1,1] → [0,1]
+    norm01 = (norm_data + 1.0) / 2.0
+
+    data3 = norm01 * max2 + min2
+    data2 = np.exp(data3)
+    data1 = data2 - eps
+    data  = data1 + min1
+
+    return data
+
 
 
 def save_image(image: np.ndarray, out_path: Path, cmap: str, vmin, vmax, dpi: int):
@@ -86,6 +111,12 @@ def main() -> None:
         default=150,
         help="Output DPI",
     )
+    parser.add_argument(
+        "--meta-path",
+        type=str,
+        default="norm_info.json",
+        help="Path to normalization metadata JSON file",
+    )
     args = parser.parse_args()
 
     input_dir = args.input_dir
@@ -100,6 +131,8 @@ def main() -> None:
 
     for npy_path in files:
         image = np.load(npy_path)
+
+        image = undo_normalize_log_meerkat(image, args.meta_path)
         vmin, vmax = _compute_vmin_vmax(image, args.vmin, args.vmax, args.percentile)
         out_name = f"{npy_path.stem}.png"
         out_path = output_dir / out_name
