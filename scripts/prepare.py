@@ -56,10 +56,12 @@ def load_meerkat_patch(
         "range": "[-1,1]",
     }   
 
-    if meta_path is not None:
-        meta_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(meta_path, "w") as f:
-            json.dump(meta, f, indent=2)
+    if meta_path is None:
+        meta_path = Path("meta.json")
+
+    meta_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
 
     # data = data - np.nanmin(data)
     # data += 1e-5
@@ -126,6 +128,7 @@ def main() -> None:
     y0 = cfg.prepare.y0
     out_path = Path(cfg.prepare.out or cfg.paths.data)
     dtype_name = cfg.prepare.dtype
+    meta_path = Path(cfg.prepare.meta_path) if cfg.prepare.meta_path is not None else None
 
     summary = Table(title="Prepare Dataset", show_lines=False)
     summary.add_column("Key", style="cyan", no_wrap=True)
@@ -140,7 +143,7 @@ def main() -> None:
     summary.add_row("debug_plots", str(cfg.prepare.debug_plots))
     console.print(Panel(summary))
 
-    data, header = load_meerkat_patch(fits_path, patch_height, patch_width, x0, y0)
+    data, header = load_meerkat_patch(fits_path, patch_height, patch_width, x0, y0, meta_path)
 
     height, width = data.shape
     yy, xx = np.mgrid[0:height, 0:width]

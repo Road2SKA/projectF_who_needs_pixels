@@ -35,6 +35,7 @@ class PrepareConfig(BaseModel):
     out: str | None = None
     dtype: str = "float32"
     debug_plots: bool = False
+    meta_path: str | None = None
 
 
 class CommonConfig(BaseModel):

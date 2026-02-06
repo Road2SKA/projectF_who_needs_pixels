@@ -31,6 +31,7 @@ prepare:
   y0: null
   dtype: float32
   debug_plots: true
+  meta_path: norm_info.json
 
 train:
   checkpoint_every: 50
