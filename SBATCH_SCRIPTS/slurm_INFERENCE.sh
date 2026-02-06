@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=TUNE
-#SBATCH --output=/idia/projects/roadtoska/projectF/LOGS/slurm_TUNE.out
-#SBATCH --error=/idia/projects/roadtoska/projectF/LOGS/slurm_TUNE.err
+#SBATCH --job-name=INFER
+#SBATCH --output=/idia/projects/roadtoska/projectF/LOGS/slurm_INFERENCE.out
+#SBATCH --error=/idia/projects/roadtoska/projectF/LOGS/slurm_INFERENCE.err
 #SBATCH --time=03:00:00
 #SBATCH --partition=GPU
 #SBATCH --constraint=A100
@@ -10,8 +10,7 @@
 #SBATCH --mem=16GB
 #SBATCH --reservation=roadtoska-gpu
 
-# SIREN Hyperparameter Tuning - GPU Required
-# This script performs hyperparameter optimization using Optuna
+# SIREN Inferences - GPU Required
 
 echo "=========================================="
 echo "SLURM Job Information"
@@ -23,9 +22,10 @@ echo "Start time: $(date)"
 echo "=========================================="
 
 # ============================================================================
-# CONFIGURATION - Edit these paths as needed
+# CONFIGURATION
 # ============================================================================
 REQUIREMENTS="${REQUIREMENTS:-/idia/projects/roadtoska/projectF/DEPENDENCIES/requirements.txt}"
+CONTAINER="${CONTAINER:-/idia/projects/roadtoska/projectF/pytorch_projectF.sif}"
 SCRIPTS_DIR="${SCRIPTS_DIR:-/project_workspace/scripts}"
 CONFIG_FILE="${CONFIG_FILE:-/project_workspace/scripts/config.yaml}"
 
@@ -36,11 +36,11 @@ CONFIG_FILE="${CONFIG_FILE:-/project_workspace/scripts/config.yaml}"
 # Load modules
 module purge
 module load apptainer
+#module load cuda/11.7
 
 # ============================================================================
 # GPU CHECK
 # ============================================================================
-
 echo ""
 echo "=========================================="
 echo "GPU Information"
@@ -56,12 +56,8 @@ echo "=========================================="
 echo ""
 
 # ============================================================================
-# RUN HYPERPARAMETER TUNING
+# INFERENCES TESTING
 # ============================================================================
-
-echo "Starting hyperparameter tuning..."
-echo "This may take a while (config specifies ${n_trials:-20} trials)"
-echo ""
 
 export CONTAINER=/idia/projects/roadtoska/projectF/pytorch_projectF.sif
 
@@ -69,21 +65,19 @@ apptainer exec --nv \
   --bind $PWD  \
   --bind /idia/projects/roadtoska/projectF:/project_workspace \
   "$CONTAINER" \
-  python $SCRIPTS_DIR/tune.py --config $CONFIG_FILE
-
+  python $SCRIPTS_DIR/inference.py --config $CONFIG_FILE
 
 
 TUNE_EXIT_CODE=$?
 
-if [ $TUNE_EXIT_CODE -ne 0 ]; then
+if [ $INFERENCE_EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "ERROR: Hyperparameter tuning failed with exit code $TUNE_EXIT_CODE"
-    exit $TUNE_EXIT_CODE
+    echo "ERROR: failed with exit code $INFERENCE_EXIT_CODE"
+    exit $INFERENCE_EXIT_CODE
 fi
 
 echo ""
 echo "=========================================="
-echo "Hyperparameter tuning completed successfully"
+echo "Completed successfully"
 echo "End time: $(date)"
 echo "=========================================="
-
