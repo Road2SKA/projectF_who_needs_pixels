@@ -10,8 +10,8 @@
 #SBATCH --mem=16GB
 #SBATCH --reservation=roadtoska-gpu
 
-# SIREN Data Preparation - CPU
-# This script prepares the FITS data for training
+# PLotting final data - GPU 
+# This script plots the final outputs
 
 echo "=========================================="
 echo "SLURM Job Information"
@@ -79,9 +79,9 @@ apptainer exec \
   --bind $PWD  \
   --bind /idia/projects/roadtoska/projectF:/project_workspace \
   "$CONTAINER" \
-  python $SCRIPTS_DIR/plot_training_frames.py.py --config $CONFIG_FILE
+  python $SCRIPTS_DIR/plot_training_frames.py --config $CONFIG_FILE
 
-PREPARE_EXIT_CODE=$?
+PLOT_EXIT_CODE=$?
 
 if [ $PLOT_EXIT_CODE -ne 0 ]; then
     echo ""
